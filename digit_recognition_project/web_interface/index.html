@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Digit Recognition</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ea580c;
+            --primary-dark: #c2410c;
+            --primary-light: #fed7aa;
+            --secondary: #f59e0b;
+            --accent: #92400e;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --background: #fef7ed;
+            --surface: rgba(255, 255, 255, 0.95);
+            --surface-hover: rgba(255, 255, 255, 0.98);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --border: rgba(234, 88, 12, 0.1);
+            --shadow: 0 20px 25px -5px rgba(146, 64, 14, 0.1), 0 10px 10px -5px rgba(146, 64, 14, 0.04);
+            --shadow-lg: 0 25px 50px -12px rgba(146, 64, 14, 0.25);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, var(--background) 0%, #fed7aa 50%, #fde68a 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header Section */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin: 0 auto;
+            font-weight: 400;
+            max-width: 600px;
+        }
+
+        /* Main Content Grid */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-light);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem 0;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+
+        /* Drawing Panel */
+        .drawing-section {
+            text-align: center;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            margin: 2rem 0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(146, 64, 14, 0.15);
+        }
+
+        canvas {
+            border: none;
+            border-radius: 20px;
+            background: white;
+            cursor: crosshair;
+            transition: all 0.3s ease;
+            display: block;
+        }
+
+        canvas:hover {
+            transform: scale(1.02);
+        }
+
+        .canvas-instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 500;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .canvas-instruction i {
+            font-size: 2rem;
+            opacity: 0.6;
+        }
+
+        canvas.drawn ~ .canvas-instruction {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+
+        /* Button Group */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: none;
+            letter-spacing: 0.025em;
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(254, 243, 199, 0.8);
+            color: var(--accent);
+            border: 2px solid var(--primary-light);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(254, 243, 199, 1);
+            border-color: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Results Panel */
+        .results-placeholder {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .results-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .results-placeholder h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        .results-placeholder p {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .result-card {
+            display: none;
+            animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .result-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .result-error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 2px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .result-header {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .result-title i {
+            font-size: 1.5rem;
+        }
+
+        .result-confidence {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        .prediction-item {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prediction-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-light), rgba(234, 88, 12, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .prediction-item.best {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.1) 0%, rgba(234, 88, 12, 0.05) 100%);
+        }
+
+        .prediction-item.best::before {
+            opacity: 1;
+        }
+
+        .prediction-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(146, 64, 14, 0.15);
+        }
+
+        .prediction-digit {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .prediction-confidence {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .prediction-rank {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* API Section */
+        .api-section {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .api-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0 0 2rem 0;
+            color: var(--accent);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .api-title i {
+            color: var(--primary);
+        }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .api-endpoint {
+            background: rgba(254, 243, 199, 0.3);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(234, 88, 12, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .api-endpoint::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+        }
+
+        .api-endpoint:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(146, 64, 14, 0.15);
+            border-color: var(--primary-light);
+        }
+
+        .api-method {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .api-method-get {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        .api-method-post {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+        }
+
+        .api-url {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .api-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .status-healthy {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-checking {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .status-unhealthy {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-light);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% {
+                transform: translate3d(0, 0, 0);
+            }
+            40%, 43% {
+                transform: translate3d(0, -8px, 0);
+            }
+            70% {
+                transform: translate3d(0, -4px, 0);
+            }
+            90% {
+                transform: translate3d(0, -2px, 0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .bounce {
+            animation: bounce 1s infinite;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer i {
+            color: var(--primary);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                margin-bottom: 2rem;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .card-title {
+                font-size: 1.25rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .canvas-container {
+                margin: 1.5rem 0;
+            }
+
+            canvas {
+                width: 100%;
+                height: auto;
+                max-width: 280px;
+            }
+
+            .predictions-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+
+            .prediction-item {
+                padding: 0.75rem;
+            }
+
+            .prediction-digit {
+                font-size: 1.5rem;
+            }
+
+            .api-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .predictions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .result-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus states for accessibility */
+        .btn:focus,
+        canvas:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --border: rgba(0, 0, 0, 0.3);
+                --text-secondary: #000;
+            }
+        }
+
+        /* Dark mode support (future enhancement) */
+        @media (prefers-color-scheme: dark) {
+            /* Dark mode styles can be added here */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Digit Recognition</h1>
+            <p>Experience the power of machine learning - draw a digit and watch our AI recognize it instantly with remarkable accuracy</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card drawing-panel">
+                <h2 class="card-title">
+                    <i class="fas fa-pencil-alt"></i>
+                    Draw Your Digit
+                </h2>
+                <div class="drawing-section">
+                    <div class="canvas-container">
+                        <canvas id="canvas" width="280" height="280"></canvas>
+                        <div class="canvas-instruction">
+                            <i class="fas fa-hand-paper"></i>
+                            <span>Click and drag to draw only one digit (0-9)</span>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="predictDigit()">
+                            <i class="fas fa-brain"></i>
+                            Predict Digit
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearCanvas()">
+                            <i class="fas fa-eraser"></i>
+                            Clear Canvas
+                        </button>
+                        <button class="btn btn-success" onclick="testAPI()">
+                            <i class="fas fa-heartbeat"></i>
+                            Check API Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card results-panel">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Prediction Results
+                </h2>
+                <div id="result" class="result-card"></div>
+                <div class="results-placeholder">
+                    <i class="fas fa-magic"></i>
+                    <h3>Your prediction will appear here</h3>
+                    <p>Draw a digit on the canvas and click "Predict Digit" to see the AI's analysis</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-section">
+            <h3 class="api-title">
+                <i class="fas fa-code"></i>
+                API Endpoints
+            </h3>
+            <div class="api-grid">
+                <div class="api-endpoint">
+                    <span class="api-method api-method-get">GET</span>
+                    <div class="api-url">/health</div>
+                    <div class="api-description">Check API health status and model availability</div>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method api-method-get">GET</span>
+                    <div class="api-url">/model-info</div>
+                    <div class="api-description">Get detailed information about the trained model</div>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method api-method-post">POST</span>
+                    <div class="api-url">/predict</div>
+                    <div class="api-description">Upload image file for digit recognition</div>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method api-method-post">POST</span>
+                    <div class="api-url">/predict-base64</div>
+                    <div class="api-description">Send base64 encoded image for instant prediction</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-content">
+                <span>Powered by Convolutional Neural Networks</span>
+                <i class="fas fa-circle"></i>
+                <span>Trained on MNIST Dataset</span>
+                <i class="fas fa-circle"></i>
+                <span>98.9% Accuracy</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let hasDrawn = false;
+
+        // Initialize canvas
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 25;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'black';
+
+        // Drawing functions
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support for mobile
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type.replace('touch', 'mouse'), {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            hasDrawn = true;
+            canvas.classList.add('drawn');
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            hasDrawn = false;
+            canvas.classList.remove('drawn');
+            document.getElementById('result').style.display = 'none';
+        }
+
+        async function predictDigit() {
+            if (!hasDrawn) {
+                showResult('Please draw a digit first', 'error');
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            const placeholderDiv = document.querySelector('.results-placeholder');
+
+            // Hide placeholder and show loading state
+            placeholderDiv.style.display = 'none';
+            resultDiv.className = 'result-card';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="result-header">
+                    <div class="result-title">
+                        <div class="loading"></div>
+                        <span>Analyzing your drawing...</span>
+                    </div>
+                    <p class="result-confidence">AI is processing your digit</p>
+                </div>
+            `;
+
+            try {
+                // Get canvas as base64 data URL
+                const imageData = canvas.toDataURL('image/png');
+                const base64Data = imageData.split(',')[1];
+
+                // Send to API
+                const response = await fetch('http://localhost:8000/predict-base64', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: base64Data })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const prediction = data.result;
+                    showResult(prediction, 'success');
+                } else {
+                    throw new Error(data.error || 'Prediction failed');
+                }
+
+            } catch (error) {
+                showResult(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(data, type) {
+            const resultDiv = document.getElementById('result');
+            const placeholderDiv = document.querySelector('.results-placeholder');
+
+            if (type === 'success') {
+                const prediction = data;
+                resultDiv.className = 'result-card result-success';
+
+                // Add rank indicators for top predictions
+                const predictionsWithRank = prediction.top3_predictions.map((p, index) => ({
+                    ...p,
+                    rank: index + 1
+                }));
+
+                resultDiv.innerHTML = `
+                    <div class="result-header">
+                        <div class="result-title">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Predicted Digit: ${prediction.prediction}</span>
+                        </div>
+                        <p class="result-confidence">Confidence: ${(prediction.confidence * 100).toFixed(1)}%</p>
+                    </div>
+                    <div class="predictions-grid">
+                        ${predictionsWithRank.map((p, index) =>
+                            `<div class="prediction-item ${index === 0 ? 'best' : ''}">
+                                ${index === 0 ? '<div class="prediction-rank">1</div>' : ''}
+                                <div class="prediction-digit">${p.digit}</div>
+                                <div class="prediction-confidence">${(p.confidence * 100).toFixed(1)}%</div>
+                            </div>`
+                        ).join('')}
+                    </div>
+                `;
+            } else {
+                resultDiv.className = 'result-card result-error';
+                resultDiv.innerHTML = `
+                    <div class="result-header">
+                        <div class="result-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>${data}</span>
+                        </div>
+                        <p class="result-confidence">Please try again</p>
+                    </div>
+                `;
+            }
+
+            resultDiv.style.display = 'block';
+            placeholderDiv.style.display = 'none';
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            hasDrawn = false;
+            canvas.classList.remove('drawn');
+
+            // Reset to placeholder state
+            const resultDiv = document.getElementById('result');
+            const placeholderDiv = document.querySelector('.results-placeholder');
+            resultDiv.style.display = 'none';
+            placeholderDiv.style.display = 'block';
+        }
+
+        async function testAPI() {
+            const buttons = document.querySelectorAll('.btn-success');
+            const originalTexts = Array.from(buttons).map(btn => btn.innerHTML);
+
+            buttons.forEach(btn => {
+                btn.innerHTML = '<div class="loading"></div> <span>Checking...</span>';
+                btn.disabled = true;
+                btn.classList.add('pulse');
+            });
+
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+
+                if (data.status === 'healthy') {
+                    buttons.forEach((btn, index) => {
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> <span>API Healthy</span>';
+                        btn.classList.remove('pulse');
+                        btn.classList.add('bounce');
+                        setTimeout(() => {
+                            btn.innerHTML = originalTexts[index];
+                            btn.disabled = false;
+                            btn.classList.remove('bounce');
+                        }, 2000);
+                    });
+                } else {
+                    throw new Error('API not healthy');
+                }
+            } catch (error) {
+                buttons.forEach((btn, index) => {
+                    btn.innerHTML = '<i class="fas fa-times-circle"></i> <span>API Unhealthy</span>';
+                    btn.classList.remove('pulse');
+                    btn.style.background = 'linear-gradient(135deg, var(--error) 0%, #dc2626 100%)';
+                    setTimeout(() => {
+                        btn.innerHTML = originalTexts[index];
+                        btn.disabled = false;
+                        btn.style.background = '';
+                    }, 3000);
+                });
+                console.error('API Health Check Failed:', error);
+            }
+        }
+
+        // Auto-check API health on page load
+        window.addEventListener('load', () => {
+            testAPI();
+        });
+    </script>
+</body>
+</html>

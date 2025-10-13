@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+*.log
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Environment variables and secrets
+.env
+*.env
+
+# Data files
+data/
+*.csv
+*.tsv
+*.h5
+*.db
+*.sqlite3
+*.pkl
+*.npz
+*.npy
+
+# Model files
+*.pth
+*.pt
+*.h5
+*.ckpt
+*.joblib
+*.onnx
+
+# Output and cache
+*.log
+*.out
+*.tmp
+*.cache/
+.cache/
+__pycache__/
+.DS_Store
+
+# VSCode and IDE settings
+.vscode/
+.idea/
+*.swp
+
+# Docker
+*.pid
+*.pid.lock
+
+# Coverage and test
+htmlcov/
+.coverage
+.tox/
+.pytest_cache/

@@ -1,0 +1,7 @@
+{
+  "model_name": "DigitClassifier",
+  "dataset": "MNIST",
+  "input_shape": "(1, 28, 28)",
+  "num_classes": 10,
+  "created_at": "2025-10-12 00:39:35"
+}

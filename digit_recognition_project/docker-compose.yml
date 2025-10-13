@@ -1,0 +1,20 @@
+services:
+  digit-recognition-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount model files (optional, can be baked into image)
+      - ./digit_classifier.pth:/app/digit_classifier.pth:ro
+      - ./digit_classifier_metadata.json:/app/digit_classifier_metadata.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
