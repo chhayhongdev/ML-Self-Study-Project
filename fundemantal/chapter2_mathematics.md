@@ -17,7 +17,10 @@ $$(f * g)(t) = \int_{-\infty}^{\infty} f(\tau) g(t - \tau) d\tau$$
 **Padding (p):** Zero-padding added around the input
 
 **Output Size Formula:**
-$$O = \floor{\frac{I - K + 2P}{S} + 1}$$
+
+$$
+O = \left\lfloor \frac{I - K + 2P}{S} + 1 \right\rfloor
+$$
 
 Where:
 - O = output size
